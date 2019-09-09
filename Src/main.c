@@ -88,13 +88,7 @@ void ssd1306_W_Command(uint8_t cmd)
 
 void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
 {
-//	uint8_t buffer[2]={0};		//command+number of data
-//	buffer[0]=(0<<7)|(1<<6);	//Co=0, D/C=1
-//	buffer[1]=0;
 
-//	for(uint32_t i=0;i<dat;i++)
-//	{
-//	if(HAL_I2C_Master_Transmit_DMA(&hi2c1,(uint16_t)(ssd1306_Addr)<<1,(uint8_t*)buffer,2)!= HAL_OK)
 		if(HAL_I2C_Mem_Write_DMA(&hi2c1,(uint16_t)(ssd1306_Addr<<1),0x40,1,data_buffer,128)!= HAL_OK)
 		{
 			Error_Handler();
@@ -102,9 +96,6 @@ void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
 		while(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
 		{
 		}
-//	}
-//	printf("data : %x \r\n",buffer[1]);
-
 }
 
 void ssd1306_Init(void)
@@ -123,7 +114,7 @@ void ssd1306_Init(void)
 	ssd1306_W_Command(0xC8);	//Set COM Output Scan Direction
 
 	ssd1306_W_Command(0xDA);	//Set COM Pins hardware configuration
-	ssd1306_W_Command(0x02);	//COM Pins Hardware Configuration 1
+	ssd1306_W_Command(0x12);	//COM Pins Hardware Configuration 1
 
 	ssd1306_W_Command(0x20);	//Set Memory Addressing Mode
 	ssd1306_W_Command(0x02);	//0x02 Page Addressing Mode A[1:0]
@@ -270,17 +261,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  for(i=0;i<8;i++)
-//	  {
-//		  line=(line<<1)|1;
-//		  ssd1306_Fill_Screen(line);
-////		  printf("%d : %x\r\n",i, line);
-//	  }
-	  line=0xFF;
+	  for(i=0;i<8;i++)
+	  {
+		  line=(line<<1)|1;
+		  ssd1306_Fill_Screen(line);
+//		  printf("%d : %x\r\n",i, line);
+		  HAL_Delay(1000);
+	  }
+	  line=0;
 	  ssd1306_Fill_Screen(line);
-//	  line=0;
-//	  ssd1306_Fill_Screen(line);
-//	  HAL_Delay(1000);
+	  HAL_Delay(1000);
 
 
   }

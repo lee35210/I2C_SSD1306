@@ -24,10 +24,14 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
+#include<stdio.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+
+#define ssd1306_Addr 0x3c
 
 /* USER CODE END PTD */
 
@@ -44,7 +48,6 @@
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 DMA_HandleTypeDef hdma_i2c1_tx;
-DMA_HandleTypeDef hdma_i2c1_rx;
 
 UART_HandleTypeDef huart1;
 DMA_HandleTypeDef hdma_usart1_rx;
@@ -53,6 +56,8 @@ DMA_HandleTypeDef hdma_usart1_tx;
 PCD_HandleTypeDef hpcd_USB_FS;
 
 /* USER CODE BEGIN PV */
+
+uint8_t ssd1306_buffer[128*64]={0};
 
 /* USER CODE END PV */
 
@@ -65,10 +70,152 @@ static void MX_USART1_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 
+void ssd1306_W_Command(uint8_t cmd)
+{
+	uint8_t buffer[2]={0};		//command+number of data
+	buffer[0]=(0<<7)|(0<<6);	//Co=1 , D/C=0
+	buffer[1]=cmd;
+
+	if(HAL_I2C_Master_Transmit_DMA(&hi2c1,(uint16_t)(ssd1306_Addr)<<1,(uint8_t*)buffer,2)!= HAL_OK)
+	{
+		Error_Handler();
+	}
+	while (HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
+	{
+	}
+//	printf("command : %x \r\n",buffer[1]);
+}
+
+void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
+{
+//	uint8_t buffer[2]={0};		//command+number of data
+//	buffer[0]=(0<<7)|(1<<6);	//Co=0, D/C=1
+//	buffer[1]=0;
+
+//	for(uint32_t i=0;i<dat;i++)
+//	{
+//	if(HAL_I2C_Master_Transmit_DMA(&hi2c1,(uint16_t)(ssd1306_Addr)<<1,(uint8_t*)buffer,2)!= HAL_OK)
+		if(HAL_I2C_Mem_Write_DMA(&hi2c1,(uint16_t)(ssd1306_Addr<<1),0x40,1,data_buffer,128)!= HAL_OK)
+		{
+			Error_Handler();
+		}
+		while(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
+		{
+		}
+//	}
+//	printf("data : %x \r\n",buffer[1]);
+
+}
+
+void ssd1306_Init(void)
+{
+//	HAL_Delay(100);
+//	ssd1306_W_Command(0xAE);
+
+	ssd1306_W_Command(0xA8);	//Set Mux Ratio
+	ssd1306_W_Command(0x3F);
+
+	ssd1306_W_Command(0xD3);	//Set Display Offset
+	ssd1306_W_Command(0x00);
+
+	ssd1306_W_Command(0x40);	//Set Display Start Line
+	ssd1306_W_Command(0xA0);	//Set Segment re-map
+	ssd1306_W_Command(0xC8);	//Set COM Output Scan Direction
+
+	ssd1306_W_Command(0xDA);	//Set COM Pins hardware configuration
+	ssd1306_W_Command(0x02);	//COM Pins Hardware Configuration 1
+
+	ssd1306_W_Command(0x20);	//Set Memory Addressing Mode
+	ssd1306_W_Command(0x02);	//0x02 Page Addressing Mode A[1:0]
+
+//	ssd1306_W_Command(0xB0);	//
+//	ssd1306_W_Command(0x00);
+//	ssd1306_W_Command(0x10);
+
+	ssd1306_W_Command(0x81);	//Set Contrast Control
+	ssd1306_W_Command(0x7F);
+
+	ssd1306_W_Command(0xA4);	//Disable Entire Display On
+	ssd1306_W_Command(0xA6);	//Set Normal Display
+
+	ssd1306_W_Command(0xD5);	//Set Osc Frequency
+	ssd1306_W_Command(0x80);
+
+//	ssd1306_W_Command(0xD9);	//
+//	ssd1306_W_Command(0x22);
+//
+//	ssd1306_W_Command(0xDB);	//
+//	ssd1306_W_Command(0x20);
+
+	ssd1306_W_Command(0x8D);	//Enable charge pump regulator
+	ssd1306_W_Command(0x14);
+
+	ssd1306_W_Command(0xAF);	//Display ON
+}
+
+void ssd1306_Update(void)
+{
+	uint8_t i;
+	for(i=0;i<8;i++)
+	{
+		ssd1306_W_Command(0xB0+i);
+		ssd1306_W_Command(0x00);
+		ssd1306_W_Command(0x10);
+	}
+}
+
+void ssd1306_Clear(void)
+{
+	uint8_t buffer[128*8]={0};
+
+	ssd1306_W_Command(0xB0);	//Set Page Start Address for Page Addressing Mode [X2:0]
+	ssd1306_W_Command(0x00);	//Set Lower Column
+	ssd1306_W_Command(0x10);	//Set Higher Column
+
+	for(uint8_t i=0;i<8;i++)
+	{
+		ssd1306_W_Command(0xB0+i);
+		ssd1306_W_Command(0x00);
+		ssd1306_W_Command(0x10);
+		ssd1306_W_Data(&buffer[i*128],128*8);
+	}
+}
+
+
+void ssd1306_Fill_Screen(uint8_t data)
+{
+	for(uint16_t i=0;i<128;i++)
+	{
+		ssd1306_buffer[i]=data;
+	}
+
+	for(uint8_t i=0;i<8;i++)
+	{
+		ssd1306_W_Command(0xB0+i);
+		ssd1306_W_Command(0x00);
+		ssd1306_W_Command(0x10);
+		ssd1306_W_Data(ssd1306_buffer,128);
+	}
+}
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+#ifdef __GNUC__
+int _write(int file,uint8_t*ptr,int len)
+{
+  HAL_UART_Transmit(&huart1,ptr,len,1000);
+  return len;
+}
+#elif (__ICCARM__||__CC_ARM)
+int fputc(int c,FILE*stream)
+{
+  HAL_UART_Transmit(&huart1,(uint8_t*)&c,1,1000);
+  return c;
+}
+#endif
 
 /* USER CODE END 0 */
 
@@ -107,6 +254,13 @@ int main(void)
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
 
+  ssd1306_Init();
+  ssd1306_Clear();
+  int i=0;
+  uint8_t line=0;
+
+//  ssd1306_Fill_Screen(0xFF);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -116,6 +270,19 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+//	  for(i=0;i<8;i++)
+//	  {
+//		  line=(line<<1)|1;
+//		  ssd1306_Fill_Screen(line);
+////		  printf("%d : %x\r\n",i, line);
+//	  }
+	  line=0xFF;
+	  ssd1306_Fill_Screen(line);
+//	  line=0;
+//	  ssd1306_Fill_Screen(line);
+//	  HAL_Delay(1000);
+
+
   }
   /* USER CODE END 3 */
 }
@@ -214,7 +381,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00100413;
+  hi2c1.Init.Timing = 0x00300F38;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -238,9 +405,6 @@ static void MX_I2C1_Init(void)
   {
     Error_Handler();
   }
-  /** I2C Enable Fast Mode Plus 
-  */
-  HAL_I2CEx_EnableFastModePlus(I2C_FASTMODEPLUS_I2C1);
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
@@ -342,9 +506,6 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
-  /* DMA1_Channel2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
   /* DMA1_Channel3_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);

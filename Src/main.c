@@ -58,6 +58,9 @@ PCD_HandleTypeDef hpcd_USB_FS;
 /* USER CODE BEGIN PV */
 
 uint8_t ssd1306_buffer[128*8]={0};
+uint8_t ssd1306_Fonts[]={0x00, 0x00, 0x00, 0xE0, 0xF8, 0x1F, 0x07, 0x1F, 0xF8, 0xE0, 0x00, 0x00, 0x00,
+					0x60, 0x7C, 0x1F, 0x07, 0x06, 0x06, 0x06, 0x06, 0x06, 0x07, 0x1F, 0x7C, 0x60
+};
 
 /* USER CODE END PV */
 
@@ -85,8 +88,8 @@ void ssd1306_Init(void)
 	ssd1306_W_Command(0x00);
 
 	ssd1306_W_Command(0x40);	//Set Display Start Line
-	ssd1306_W_Command(0xA0);	//Set Segment re-map
-	ssd1306_W_Command(0xC0);	//Set COM Output Scan Direction
+	ssd1306_W_Command(0xA1);	//Set Segment re-map
+	ssd1306_W_Command(0xC8);	//Set COM Output Scan Direction
 
 	ssd1306_W_Command(0xDA);	//Set COM Pins hardware configuration
 	ssd1306_W_Command(0x12);	//COM Pins Hardware Configuration 1
@@ -212,32 +215,48 @@ void ssd1306_Update_Screen(void)
 
 void ssd1306_W_Fonts(uint8_t page, uint8_t column)	//page, column, font,
 {
-	uint8_t font_A[8]={0};
-	font_A[1]=0xFE;
-	font_A[2]=0x11;
-	font_A[3]=0x11;
-	font_A[4]=0x11;
-	font_A[5]=0x11;
-	font_A[6]=0xFE;
+//	uint8_t fonts[]={0x00, 0x00, 0x00, 0xE0, 0xF8, 0x1F, 0x07, 0x1F, 0xF8, 0xE0, 0x00, 0x00, 0x00,
+//			0x60, 0x7C, 0x1F, 0x07, 0x06, 0x06, 0x06, 0x06, 0x06, 0x07, 0x1F, 0x7C, 0x60};
+////	uint8_t font_B[]={0x00, 0x00, 0x7F, 0x49, 0x49, 0x37};
+//	uint8_t font_B_S[]={0x60, 0x18, 0x16, 0x11, 0x16, 0x18, 0x60};
+//
+//
+////	ssd1306_W_Command(0xB0+page);
+//
+//	for(uint8_t i=0;i<13;i++)
+//	{
+//		for(uint8_t j=0;j<8;j++)
+//		{
+//			ssd1306_buffer[i+16*j]=font_A[i];
+//			ssd1306_buffer[i+16*j+128]=font_A[i+13];
+//		}
+//	}
+//	for(uint8_t i=0;i<7;i++)
+//	{
+//		ssd1306_buffer[128*2+i]=font_B_S[i];
+//	}
+//
+//	ssd1306_W_Command(0xB0);
+//	ssd1306_W_Data(ssd1306_buffer,128);
+//	ssd1306_W_Command(0xB1);
+//	ssd1306_W_Data(&ssd1306_buffer[128],128);
+//	ssd1306_W_Command(0xB2);
+//	ssd1306_W_Data(&ssd1306_buffer[128*2],128);
+}
 
-	uint8_t font_B[8]={0};
-	font_B[1]=0xFF;
-	font_B[2]=0x89;
-	font_B[3]=0x89;
-	font_B[4]=0x89;
-	font_B[5]=0x89;
-	font_B[6]=0x89;
-	font_B[7]=0x76;
-
-	ssd1306_W_Command(0xB0+page);
-
-	for(uint8_t i=0;i<8;i++)
+void ssd1306_W_Char(uint8_t character_Code, uint8_t page)
+{
+	uint8_t char_Buffer[26]={0};
+	for(uint8_t i=0;i<26;i++)
 	{
-		ssd1306_buffer[i]=font_A[i];
-		ssd1306_buffer[i+8]=font_B[i];
+		char_Buffer[i]=ssd1306_Fonts[(character_Code-65)+i];
 	}
 
-	ssd1306_W_Data(ssd1306_buffer,128);
+
+	ssd1306_W_Command(0xB0+page);
+	ssd1306_W_Data(&char_Buffer[0],13);
+	ssd1306_W_Command(0xB0+page+1);
+	ssd1306_W_Data(&char_Buffer[13],13);
 }
 
 /* USER CODE END PFP */
@@ -299,7 +318,9 @@ int main(void)
   ssd1306_Init();
   ssd1306_Clear();
 
-  ssd1306_W_Fonts(0,0);
+//  ssd1306_W_Fonts(0,0);
+
+  ssd1306_W_Char('A',0);
 
   int i=0;
   uint8_t line=0;
@@ -330,16 +351,16 @@ int main(void)
 //	  ssd1306_W_Fonts(0,0);
 //	  HAL_Delay(1000);
 
-	  for(i=0;i<8;i++)
-	  {
-		  line=(line<<1)|1;
-		  ssd1306_Fill_Screen(line);
-//		  printf("%d : %x\r\n",i, line);
-		  HAL_Delay(1000);
-	  }
-	  line=0;
-	  ssd1306_Fill_Screen(line);
-	  HAL_Delay(1000);
+//	  for(i=0;i<8;i++)
+//	  {
+//		  line=(line<<1)|1;
+//		  ssd1306_Fill_Screen(line);
+////		  printf("%d : %x\r\n",i, line);
+//		  HAL_Delay(1000);
+//	  }
+//	  line=0;
+//	  ssd1306_Fill_Screen(line);
+//	  HAL_Delay(1000);
 
 
   }

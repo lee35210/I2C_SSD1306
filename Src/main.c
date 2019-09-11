@@ -70,38 +70,8 @@ static void MX_USART1_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 
-<<<<<<< HEAD
 void ssd1306_W_Command(uint8_t cmd);
 void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size);
-=======
-void ssd1306_W_Command(uint8_t cmd)
-{
-	uint8_t buffer[2]={0};		//command+number of data
-	buffer[0]=(0<<7)|(0<<6);	//Co=1 , D/C=0
-	buffer[1]=cmd;
-
-	if(HAL_I2C_Master_Transmit_DMA(&hi2c1,(uint16_t)(ssd1306_Addr)<<1,(uint8_t*)buffer,2)!= HAL_OK)
-	{
-		Error_Handler();
-	}
-	while (HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
-	{
-	}
-//	printf("command : %x \r\n",buffer[1]);
-}
-
-void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
-{
-
-		if(HAL_I2C_Mem_Write_DMA(&hi2c1,(uint16_t)(ssd1306_Addr<<1),0x40,1,data_buffer,128)!= HAL_OK)
-		{
-			Error_Handler();
-		}
-		while(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
-		{
-		}
-}
->>>>>>> refs/remotes/origin/master
 
 void ssd1306_Init(void)
 {
@@ -345,7 +315,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-<<<<<<< HEAD
+
 //	  for(i=0;i<8;i++)
 //	  {
 //		  line=(line<<1)|1;
@@ -359,7 +329,7 @@ int main(void)
 //	  HAL_Delay(1000);
 //	  ssd1306_W_Fonts(0,0);
 //	  HAL_Delay(1000);
-=======
+
 	  for(i=0;i<8;i++)
 	  {
 		  line=(line<<1)|1;
@@ -371,7 +341,6 @@ int main(void)
 	  ssd1306_Fill_Screen(line);
 	  HAL_Delay(1000);
 
->>>>>>> refs/remotes/origin/master
 
   }
   /* USER CODE END 3 */

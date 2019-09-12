@@ -33,6 +33,7 @@
 /* USER CODE BEGIN PTD */
 
 #define ssd1306_Addr 0x3c
+#define font_width 12	//gap between fonts, default 15
 
 /* USER CODE END PTD */
 
@@ -214,28 +215,27 @@ void ssd1306_Set_Coord(uint8_t page, uint8_t col)
 
 void ssd1306_W_Char(uint8_t character_Code, uint8_t page, uint16_t column)
 {
-	uint8_t char_Buffer[30]={0};
+	uint8_t char_Buffer[font_width*2]={0};
 
-	for(uint8_t i=0;i<30;i++)
+	for(uint8_t i=0;i<font_width*2;i++)
 	{
-		char_Buffer[i]=ssd1306_Fonts[(character_Code-32)*30+i];
+		char_Buffer[i]=ssd1306_Fonts[(character_Code-32)*(font_width*2)+i];
 	}
 
 	for(uint8_t i=0;i<2;i++)
 	{
 		ssd1306_Set_Coord(page+i,column);
-		ssd1306_W_Data(&char_Buffer[i*15],15);
+		ssd1306_W_Data(&char_Buffer[i*font_width],font_width);
 	}
 }
 
 void ssd1306_W_String(char *str, uint8_t page, uint8_t col)
 {
-	uint8_t font_gap=12;	//font width=15
 	while(*str)
 	{
 		printf("%c\r\n",*str);
 		ssd1306_W_Char(*str,page,col);
-		col+=font_gap;
+		col+=font_width;
 		str++;
 	}
 }
@@ -304,7 +304,10 @@ int main(void)
 //  ssd1306_W_Char('A',0,0);
 //  ssd1306_W_Char('B',0,15);
 
-  ssd1306_W_String("ABCDEFG",0,0);
+  ssd1306_W_String("ABCDEFGH",0,0);
+  ssd1306_W_String("IJKLMNOP",2,0);
+  ssd1306_W_String("QRSTUVWX",4,0);
+  ssd1306_W_String("YZ",6,0);
 
   int i=0;
   uint8_t line=0;

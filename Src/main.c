@@ -26,14 +26,12 @@
 
 #include<stdio.h>
 #include "fonts.h"
+#include "SSD1306.h"
 
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
-#define ssd1306_Addr 0x3c
-#define font_width 12	//gap between fonts, default 15
 
 /* USER CODE END PTD */
 
@@ -75,170 +73,6 @@ static void MX_USART1_UART_Init(void);
 static void MX_USB_PCD_Init(void);
 /* USER CODE BEGIN PFP */
 
-void ssd1306_W_Command(uint8_t cmd);
-void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size);
-
-void ssd1306_Init(void)
-{
-//	HAL_Delay(100);
-//	ssd1306_W_Command(0xAE);
-
-	ssd1306_W_Command(0xA8);	//Set Mux Ratio
-	ssd1306_W_Command(0x3F);
-
-	ssd1306_W_Command(0xD3);	//Set Display Offset
-	ssd1306_W_Command(0x00);
-
-	ssd1306_W_Command(0x40);	//Set Display Start Line
-	ssd1306_W_Command(0xA1);	//Set Segment re-map
-	ssd1306_W_Command(0xC8);	//Set COM Output Scan Direction
-
-	ssd1306_W_Command(0xDA);	//Set COM Pins hardware configuration
-	ssd1306_W_Command(0x12);	//COM Pins Hardware Configuration 1
-
-	ssd1306_W_Command(0x20);	//Set Memory Addressing Mode
-	ssd1306_W_Command(0x00);	//0x00 Horizontal 0x02 Page Addressing Mode A[1:0]
-
-//	ssd1306_W_Command(0xB0);	//
-//	ssd1306_W_Command(0x00);
-//	ssd1306_W_Command(0x10);
-
-	ssd1306_W_Command(0x81);	//Set Contrast Control
-	ssd1306_W_Command(0x7F);
-
-	ssd1306_W_Command(0xA4);	//Disable Entire Display On
-	ssd1306_W_Command(0xA6);	//Set Normal Display
-
-	ssd1306_W_Command(0xD5);	//Set Osc Frequency
-	ssd1306_W_Command(0x80);
-
-//	ssd1306_W_Command(0xD9);	//
-//	ssd1306_W_Command(0x22);
-//
-//	ssd1306_W_Command(0xDB);	//
-//	ssd1306_W_Command(0x20);
-
-	ssd1306_W_Command(0x8D);	//Enable charge pump regulator
-	ssd1306_W_Command(0x14);
-
-	ssd1306_W_Command(0xAF);	//Display ON
-}
-
-void ssd1306_W_Command(uint8_t cmd)
-{
-	uint8_t buffer[2]={0};		//command+number of data
-	buffer[0]=(0<<7)|(0<<6);	//Co=1 , D/C=0
-	buffer[1]=cmd;
-
-	if(HAL_I2C_Master_Transmit_DMA(&hi2c1,(uint16_t)(ssd1306_Addr)<<1,(uint8_t*)buffer,2)!= HAL_OK)
-	{
-		Error_Handler();
-	}
-	while (HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
-	{
-	}
-//	printf("command : %x \r\n",buffer[1]);
-}
-
-void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
-{
-	if(HAL_I2C_Mem_Write_DMA(&hi2c1,(uint16_t)(ssd1306_Addr<<1),0x40,1,data_buffer,buffer_size)!= HAL_OK)
-	{
-		Error_Handler();
-	}
-	while(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY)
-	{
-	}
-}
-
-void ssd1306_Update(void)
-{
-	uint8_t i;
-	for(i=0;i<8;i++)
-	{
-		ssd1306_W_Command(0xB0+i);
-		ssd1306_W_Command(0x00);
-		ssd1306_W_Command(0x10);
-	}
-}
-
-void ssd1306_Clear(void)
-{
-	uint8_t buffer[128]={0};
-
-	ssd1306_W_Command(0x22);
-	ssd1306_W_Command(0x00);
-	ssd1306_W_Command(0x07);
-
-	for(uint8_t i=0;i<8;i++)
-	{
-		ssd1306_W_Data(buffer,128);
-	}
-}
-
-
-void ssd1306_Fill_Screen(uint8_t data)
-{
-	uint8_t buffer[128]={0};
-
-	if(data!=0)
-	{
-		for(uint8_t i=0;i<128;i++)
-		{
-			buffer[i]=0xFF;
-		}
-	}
-
-	ssd1306_W_Command(0x22);	//Setup page start and end address
-	ssd1306_W_Command(0x00);
-	ssd1306_W_Command(0x07);
-
-	ssd1306_W_Command(0x21);
-	ssd1306_W_Command(64);
-	ssd1306_W_Command(127);
-	for(uint8_t i=0;i<8;i++)
-	{
-		ssd1306_W_Data(buffer,64);
-	}
-}
-
-void ssd1306_Set_Coord(uint8_t page, uint8_t col)
-{
-	ssd1306_W_Command(0x21);	//Set column address
-	ssd1306_W_Command(col);		//Start column, font width 15bit
-	ssd1306_W_Command(col+15);	//End column
-
-	ssd1306_W_Command(0x22);	//Set Page address
-	ssd1306_W_Command(page);	//Start page
-	ssd1306_W_Command(page);	//End page
-}
-
-void ssd1306_W_Char(uint8_t character_Code, uint8_t page, uint16_t column)
-{
-	uint8_t char_Buffer[font_width*2]={0};
-
-	for(uint8_t i=0;i<font_width*2;i++)
-	{
-		char_Buffer[i]=ssd1306_Fonts[(character_Code-32)*(font_width*2)+i];
-	}
-
-	for(uint8_t i=0;i<2;i++)
-	{
-		ssd1306_Set_Coord(page+i,column);
-		ssd1306_W_Data(&char_Buffer[i*font_width],font_width);
-	}
-}
-
-void ssd1306_W_String(char *str, uint8_t page, uint8_t col)
-{
-	while(*str)
-	{
-		printf("%c\r\n",*str);
-		ssd1306_W_Char(*str,page,col);
-		col+=font_width;
-		str++;
-	}
-}
 
 /* USER CODE END PFP */
 
@@ -298,19 +132,26 @@ int main(void)
 
   ssd1306_Init();
   ssd1306_Clear();
+//  ssd1306_Fill_Screen(0xFF);
 
-//  ssd1306_W_Fonts(0,0);
+  uint8_t test_Buffer[1]={0xFF};
 
-//  ssd1306_W_Char('A',0,0);
-//  ssd1306_W_Char('B',0,15);
 
-  ssd1306_W_String("ABCDEFGH",0,0);
-  ssd1306_W_String("IJKLMNOP",2,0);
-  ssd1306_W_String("QRSTUVWX",4,0);
-  ssd1306_W_String("YZ",6,0);
+//  ssd1306_W_String("Thu",0,0);
+//  ssd1306_W_String("20:2243",0,64);
 
-  int i=0;
-  uint8_t line=0;
+
+
+
+//  ssd1306_Fill_Screen(0x0f);
+//  HAL_Delay(2000);
+//
+//  ssd1306_Fill_Screen(0xFf);
+//  HAL_Delay(2000);
+//
+//  ssd1306_Clear();
+
+
 
 //  ssd1306_Fill_Screen(0xFF);
 
@@ -325,12 +166,18 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-//	  ssd1306_Fill_Screen(1);
-//	  HAL_Delay(1000);
-//	  ssd1306_Fill_Screen(0);
-//	  HAL_Delay(1000);
-
-
+//	  for(uint8_t i=0;i<12;i++)
+//	   {
+//	 	  ssd1306_W_String("!#$%&'()*+",0,i);
+//	 	  HAL_Delay(1000);
+//	 	  ssd1306_Clear();
+//	   }
+	  for(uint8_t i=0;i<10;i++)
+	  {
+		  ssd1306_Set_Coord(0,120+i);
+		  ssd1306_W_Data(test_Buffer,1);
+		  HAL_Delay(500);
+	  }
   }
   /* USER CODE END 3 */
 }

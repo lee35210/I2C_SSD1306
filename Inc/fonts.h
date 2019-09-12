@@ -5,8 +5,6 @@
  *      Author: rs
  */
 
-#include<stdint.h>
-
 #ifndef FONTS_H_
 #define FONTS_H_
 
@@ -18,14 +16,13 @@
  */
 
 #include <stdint.h>
-#include "fonts.h"
 
 /*
 **  Font data for Arial Narrow 12pt
 */
 
 /* Character bitmaps for Arial Narrow 12pt */
-const uint8_t ssd1306_Fonts[] =
+static const uint8_t ssd1306_Fonts[] =
 {
 	/* @0 ' ' (12 pixels wide) */
 	//

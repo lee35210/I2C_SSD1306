@@ -23,7 +23,7 @@ void ssd1306_W_Command(uint8_t cmd)
 	while (HAL_I2C_GetState(&ssd1306_I2C_PORT) != HAL_I2C_STATE_READY)
 	{
 	}
-//	printf("command : %x \r\n",buffer[1]);
+
 }
 
 void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
@@ -116,14 +116,14 @@ void ssd1306_Fill_Screen(uint8_t data)
 	}
 
 	ssd1306_W_Command(0x22);	//Setup page start and end address
-	ssd1306_W_Command(0x01);
+	ssd1306_W_Command(0x00);
 	ssd1306_W_Command(0x07);
 
 	ssd1306_W_Command(0x21);
 	ssd1306_W_Command(0);
 	ssd1306_W_Command(127);
 
-	for(uint8_t i=0;i<7;i++)
+	for(uint8_t i=0;i<8;i++)
 	{
 		ssd1306_W_Data(buffer,128);
 	}
@@ -133,7 +133,8 @@ void ssd1306_Set_Coord(uint8_t page, uint8_t col)
 {
 	ssd1306_W_Command(0x21);	//Set column address
 	ssd1306_W_Command(col);		//Start column, font width 15bit
-	ssd1306_W_Command(col+15);	//End column
+	ssd1306_W_Command(col+font_width-1);	//End column
+
 
 	ssd1306_W_Command(0x22);	//Set Page address
 	ssd1306_W_Command(page);	//Start page
@@ -147,14 +148,12 @@ void ssd1306_W_Char(uint8_t character_Code, uint8_t page, uint16_t column)
 	for(uint8_t i=0;i<font_width*2;i++)
 	{
 		char_Buffer[i]=ssd1306_Fonts[(character_Code-32)*(font_width*2)+i];
-//		printf("%d : %x\r\n",i,char_Buffer[i]);
 	}
 
 	for(uint8_t i=0;i<2;i++)
 	{
 		ssd1306_Set_Coord(page+i,column);
 		ssd1306_W_Data(&char_Buffer[i*font_width],font_width);
-//		printf("W_Char : %d, %d\r\n",page+i,column);
 	}
 }
 
@@ -174,7 +173,6 @@ void ssd1306_W_String(char *str, uint8_t page, uint8_t col)
 		ssd1306_W_Char(*str,page,col);
 
 		col+=font_width;
-		printf("%c, %d, %d\r\n",*str,page,col);
 		str++;
 	}
 }

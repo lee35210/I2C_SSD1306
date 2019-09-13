@@ -132,12 +132,11 @@ int main(void)
 
   ssd1306_Init();
   ssd1306_Clear();
-//  ssd1306_Fill_Screen(0xFF);
+
+//  ssd1306_W_String("[\]^_`abcdefghijklmnopqrstuvwxyz{|}~",0,0);
 
 
-//  ssd1306_W_String("Thu",0,0);
-//  ssd1306_W_String("20:2243",0,67);
-
+  ssd1306_Fill_Screen(0xFF);
 
   /* USER CODE END 2 */
 
@@ -149,12 +148,6 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
 
-	  for(uint8_t i=0;i<12;i++)
-	   {
-	 	  ssd1306_W_String(" !#$%&'()*+,-./0123456789:;<=>?@",0,i);
-//	 	  HAL_Delay(500);
-//	 	  ssd1306_Clear();
-	   }
 
   }
   /* USER CODE END 3 */

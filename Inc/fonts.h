@@ -17,11 +17,6 @@
 
 #include <stdint.h>
 
-/*
-**  Font data for Arial Narrow 12pt
-*/
-
-/* Character bitmaps for Arial Narrow 12pt */
 static const uint8_t ssd1306_Fonts[] =
 {
 	/* @0 ' ' (12 pixels wide) */

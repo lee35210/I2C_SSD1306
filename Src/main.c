@@ -132,11 +132,11 @@ int main(void)
 
   ssd1306_Init();
   ssd1306_Clear();
+  ssd1306_W_Char('A',0,0);
+  HAL_Delay(1000);
+  ssd1306_W_String("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{|}~",0,0);
 
-//  ssd1306_W_String("[\]^_`abcdefghijklmnopqrstuvwxyz{|}~",0,0);
-
-
-  ssd1306_Fill_Screen(0xFF);
+//  ssd1306_Clear();
 
   /* USER CODE END 2 */
 

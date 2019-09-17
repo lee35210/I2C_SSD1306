@@ -12,25 +12,24 @@
 
 void ssd1306_W_Command(uint8_t cmd)
 {
-	uint8_t buffer[2]={0};		//command+number of data
-	buffer[0]=(0<<7)|(0<<6);	//Co=1 , D/C=0
+	uint8_t buffer[2]={0};		//Control Byte + Command Byte
+	buffer[0]=(0<<7)|(0<<6);	//Co=0 , D/C=0
 	buffer[1]=cmd;
 
 	if(HAL_I2C_Master_Transmit_DMA(&ssd1306_I2C_PORT,(uint16_t)(ssd1306_Address)<<1,(uint8_t*)buffer,2)!= HAL_OK)
 	{
-//		Error_Handler();
+		Error_Handler();
 	}
 	while (HAL_I2C_GetState(&ssd1306_I2C_PORT) != HAL_I2C_STATE_READY)
 	{
 	}
-
 }
 
 void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
 {
 	if(HAL_I2C_Mem_Write_DMA(&ssd1306_I2C_PORT,(uint16_t)(ssd1306_Address<<1),0x40,1,data_buffer,buffer_size)!= HAL_OK)
 	{
-//		Error_Handler();
+		Error_Handler();
 	}
 	while(HAL_I2C_GetState(&ssd1306_I2C_PORT) != HAL_I2C_STATE_READY)
 	{
@@ -39,43 +38,35 @@ void ssd1306_W_Data(uint8_t* data_buffer, uint16_t buffer_size)
 
 void ssd1306_Init(void)
 {
-//	HAL_Delay(100);
-//	ssd1306_W_Command(0xAE);
-
 	ssd1306_W_Command(0xA8);	//Set Mux Ratio
-	ssd1306_W_Command(0x3F);
+	ssd1306_W_Command(0x3F);	//64MUX
 
 	ssd1306_W_Command(0xD3);	//Set Display Offset
-	ssd1306_W_Command(0x00);
+	ssd1306_W_Command(0x00);	//COM0
 
 	ssd1306_W_Command(0x40);	//Set Display Start Line
-	ssd1306_W_Command(0xA1);	//Set Segment re-map
-	ssd1306_W_Command(0xC8);	//Set COM Output Scan Direction
+
+	ssd1306_W_Command(0xA1);	//Set Segment re-map, Default 0xA0
+								//column address 127 is mapped to SEG0 (좌우 반전)
+
+	ssd1306_W_Command(0xC8);	//Set COM Output Scan Direction, default 0xC0
+								//remapped mode. Scan from COM[N-1] to COM0 (상하 반전)
 
 	ssd1306_W_Command(0xDA);	//Set COM Pins hardware configuration
-	ssd1306_W_Command(0x12);	//COM Pins Hardware Configuration 1
+	ssd1306_W_Command(0x12);
 
 	ssd1306_W_Command(0x20);	//Set Memory Addressing Mode
-	ssd1306_W_Command(0x00);	//0x00 Horizontal 0x02 Page Addressing Mode A[1:0]
-
-//	ssd1306_W_Command(0xB0);	//
-//	ssd1306_W_Command(0x00);
-//	ssd1306_W_Command(0x10);
+	ssd1306_W_Command(0x02);	//Page Addressing Mode
 
 	ssd1306_W_Command(0x81);	//Set Contrast Control
-	ssd1306_W_Command(0x7F);
+	ssd1306_W_Command(0x7F);	//1~256
 
 	ssd1306_W_Command(0xA4);	//Disable Entire Display On
+
 	ssd1306_W_Command(0xA6);	//Set Normal Display
 
 	ssd1306_W_Command(0xD5);	//Set Osc Frequency
 	ssd1306_W_Command(0x80);
-
-//	ssd1306_W_Command(0xD9);	//
-//	ssd1306_W_Command(0x22);
-//
-//	ssd1306_W_Command(0xDB);	//
-//	ssd1306_W_Command(0x20);
 
 	ssd1306_W_Command(0x8D);	//Enable charge pump regulator
 	ssd1306_W_Command(0x14);
@@ -88,16 +79,12 @@ void ssd1306_Clear(void)
 {
 	uint8_t buffer[128]={0};
 
-	ssd1306_W_Command(0x22);
 	ssd1306_W_Command(0x00);
-	ssd1306_W_Command(0x07);
-
-	ssd1306_W_Command(0x21);
-	ssd1306_W_Command(0);
-	ssd1306_W_Command(127);
+	ssd1306_W_Command(0x10);
 
 	for(uint8_t i=0;i<8;i++)
 	{
+		ssd1306_W_Command(0xB0+i);
 		ssd1306_W_Data(buffer,128);
 	}
 }
@@ -115,30 +102,24 @@ void ssd1306_Fill_Screen(uint8_t data)
 		}
 	}
 
-	ssd1306_W_Command(0x22);	//Setup page start and end address
 	ssd1306_W_Command(0x00);
-	ssd1306_W_Command(0x07);
-
-	ssd1306_W_Command(0x21);
-	ssd1306_W_Command(0);
-	ssd1306_W_Command(127);
+	ssd1306_W_Command(0x10);
 
 	for(uint8_t i=0;i<8;i++)
 	{
+		ssd1306_W_Command(0xB0+i);
 		ssd1306_W_Data(buffer,128);
 	}
 }
 
 void ssd1306_Set_Coord(uint8_t page, uint8_t col)
 {
-	ssd1306_W_Command(0x21);	//Set column address
-	ssd1306_W_Command(col);		//Start column, font width 15bit
-	ssd1306_W_Command(col+font_width-1);	//End column
-
-
-	ssd1306_W_Command(0x22);	//Set Page address
-	ssd1306_W_Command(page);	//Start page
-	ssd1306_W_Command(page);	//End page
+	uint8_t col_low=0x0F,col_high=0x1F;
+	col_low=(col&0x0F);
+	col_high=0x10|((col>>4)&0x0F);
+	ssd1306_W_Command(0xB0+page);
+	ssd1306_W_Command(col_low);
+	ssd1306_W_Command(col_high);
 }
 
 void ssd1306_W_Char(uint8_t character_Code, uint8_t page, uint16_t column)

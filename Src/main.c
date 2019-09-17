@@ -130,13 +130,28 @@ int main(void)
   MX_USB_PCD_Init();
   /* USER CODE BEGIN 2 */
 
+  uint8_t fill_Buffer=0;
+
   ssd1306_Init();
   ssd1306_Clear();
-  ssd1306_W_Char('A',0,0);
-  HAL_Delay(1000);
-  ssd1306_W_String("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{|}~",0,0);
 
-//  ssd1306_Clear();
+  for(uint8_t i=0;i<9;i++)
+  {
+	  ssd1306_Fill_Screen(fill_Buffer);
+	  fill_Buffer=((fill_Buffer<<1)|0x01);
+	  HAL_Delay(500);
+  }
+
+  ssd1306_Clear();
+
+  for(uint8_t i=0;i<8;i+=2)
+  {
+	  for(uint8_t j=0;j<128;j++)
+	  {
+		  ssd1306_W_String("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz{|}~",i,j);
+		  HAL_Delay(20);
+	  }
+  }
 
   /* USER CODE END 2 */
 

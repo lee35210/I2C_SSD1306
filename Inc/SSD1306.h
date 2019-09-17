@@ -15,7 +15,6 @@
 #define font_width 12
 
 extern I2C_HandleTypeDef hi2c1;
-extern DMA_HandleTypeDef hdma_i2c1_tx;
 extern void Error_Handler(void);
 
 void ssd1306_Init(void);

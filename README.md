@@ -1,1 +1,3 @@
 # I2C_SSD1306
+
+STM32WB55 Nucleo Board + SSD1306 (I2C Ver.)

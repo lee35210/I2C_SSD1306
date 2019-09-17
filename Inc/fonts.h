@@ -8,13 +8,6 @@
 #ifndef FONTS_H_
 #define FONTS_H_
 
-/*
- * fonts.c
- *
- *  Created on: 2019. 9. 11.
- *      Author: rs
- */
-
 #include <stdint.h>
 
 static const uint8_t ssd1306_Fonts[] =
